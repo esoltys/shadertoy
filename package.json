@@ -1,0 +1,9 @@
+{
+  "name": "shadertoy",
+  "version": "1.0.0",
+  "description": "Local ShaderToy development environment",
+  "private": true,
+  "scripts": {
+    "serve": "node server.js"
+  }
+}
