@@ -234,14 +234,16 @@ Hit raymarch(vec3 ro, vec3 rd) {
 
 // ── Normals & Background ─────────────────────────────────────────────────────
 
-// Numerical central differences for normal vectors (optimized 3-tap forward difference)
+// Numerical central differences for normal vectors (restored robust backward difference)
 vec3 getNormal(vec3 p) {
     vec2 e = vec2(0.001, 0.0);
-    return normalize(vec3(
-        sceneSDF(p + e.xyy).dist,
-        sceneSDF(p + e.yxy).dist,
-        sceneSDF(p + e.yyx).dist
-    ));
+    float d = sceneSDF(p).dist;
+    vec3 n = d - vec3(
+        sceneSDF(p - e.xyy).dist,
+        sceneSDF(p - e.yxy).dist,
+        sceneSDF(p - e.yyx).dist
+    );
+    return normalize(n);
 }
 
 // Neon purple fog color at horizon (no stars to prevent translucency)
