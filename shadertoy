@@ -63,5 +63,5 @@ else
     log "Open in your browser: $URL"
 fi
 
-trap "kill $SERVER_PID 2>/dev/null; echo ''; log 'Server stopped.'" EXIT
+trap 'kill $SERVER_PID 2>/dev/null; echo ""; log "Server stopped."' EXIT
 wait "$SERVER_PID"
