@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShaderToy Runner</title>
+    <meta name="description" content="Local ShaderToy-compatible GLSL shader runner">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <canvas id="canvas"></canvas>
+
+    <!-- ── HUD ─────────────────────────────────────────────── -->
+    <div id="hud">
+        <div class="hud-row hud-top">
+            <span id="shader-name" class="shader-name">—</span>
+            <div class="hud-controls">
+                <button id="btn-pause"      title="Pause / Resume (Space)">⏸</button>
+                <button id="btn-restart"    title="Restart (R)">↺</button>
+                <button id="btn-fullscreen" title="Fullscreen (F)">⛶</button>
+            </div>
+        </div>
+        <div class="hud-row hud-stats">
+            <span class="stat-label">fps</span>
+            <span id="hud-fps"  class="stat-value">–</span>
+            <span class="stat-label">time</span>
+            <span id="hud-time" class="stat-value">0.00s</span>
+        </div>
+        <div class="hud-hint">Space · R · F</div>
+    </div>
+
+    <!-- ── Paused badge ────────────────────────────────────── -->
+    <div id="paused-badge">⏸ PAUSED</div>
+
+    <!-- ── Error overlay ───────────────────────────────────── -->
+    <div id="error-overlay" class="hidden">
+        <div class="error-box">
+            <div class="error-title"><span>⚠</span> Shader Error</div>
+            <pre id="error-text"></pre>
+        </div>
+    </div>
+
+    <!-- ── Loading screen ──────────────────────────────────── -->
+    <div id="loading">
+        <div class="spinner"></div>
+        <span>Loading shader…</span>
+    </div>
+
+    <script src="runner.js"></script>
+</body>
+</html>

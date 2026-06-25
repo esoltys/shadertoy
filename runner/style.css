@@ -1,0 +1,246 @@
+/* ──────────────────────────────────────────────────────────────
+   ShaderToy Runner — style.css
+   ────────────────────────────────────────────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap');
+
+:root {
+    --bg:          #09090f;
+    --surface:     rgba(14, 14, 24, 0.72);
+    --border:      rgba(130, 110, 255, 0.16);
+    --accent:      #8b78f0;
+    --accent-glow: rgba(139, 120, 240, 0.28);
+    --text:        #d8d4f2;
+    --text-dim:    rgba(216, 212, 242, 0.4);
+    --error:       #f05870;
+    --error-bg:    rgba(240, 88, 112, 0.07);
+    --mono:        'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    font-family: var(--mono);
+    color: var(--text);
+}
+
+/* ── Canvas ──────────────────────────────────────────────────── */
+
+#canvas {
+    display: block;
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+/* ── HUD ─────────────────────────────────────────────────────── */
+
+#hud {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 10;
+    background: var(--surface);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 14px;
+    min-width: 190px;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    pointer-events: none;
+}
+
+#hud.visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.hud-row { display: flex; align-items: center; }
+
+.hud-top {
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 9px;
+}
+
+.shader-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+/* buttons */
+.hud-controls { display: flex; gap: 4px; }
+
+.hud-controls button {
+    width: 26px; height: 26px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: color 0.15s, border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+
+.hud-controls button:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--accent-glow);
+    box-shadow: 0 0 8px var(--accent-glow);
+}
+
+/* stats */
+.hud-stats {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 2px 10px;
+    margin-bottom: 8px;
+}
+
+.stat-label {
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+}
+
+.stat-value {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: right;
+}
+
+.hud-hint {
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 0.07em;
+    text-align: center;
+    border-top: 1px solid var(--border);
+    padding-top: 7px;
+}
+
+/* ── Paused badge ─────────────────────────────────────────────── */
+
+#paused-badge {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    background: var(--surface);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 22px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    color: var(--accent);
+    text-transform: uppercase;
+    animation: pulse 2.4s ease-in-out infinite;
+}
+
+#paused-badge.visible { display: block; }
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.5; }
+}
+
+/* ── Error overlay ───────────────────────────────────────────── */
+
+#error-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(9, 9, 15, 0.82);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+#error-overlay.hidden { display: none; }
+
+.error-box {
+    background: var(--error-bg);
+    border: 1px solid rgba(240, 88, 112, 0.28);
+    border-radius: 12px;
+    padding: 22px 26px;
+    max-width: 720px;
+    width: 100%;
+    max-height: 78vh;
+    overflow-y: auto;
+}
+
+.error-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--error);
+    margin-bottom: 14px;
+}
+
+#error-text {
+    font-size: 11.5px;
+    line-height: 1.75;
+    color: var(--text);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* ── Loading screen ──────────────────────────────────────────── */
+
+#loading {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    background: var(--bg);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    transition: opacity 0.35s ease;
+}
+
+#loading.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.spinner {
+    width: 30px; height: 30px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.75s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
