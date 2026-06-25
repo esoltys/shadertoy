@@ -377,9 +377,12 @@ vec3 shade(Hit hit, vec3 ro, vec3 rd, float t) {
     // Increased Ambient term (from 0.08 to 0.25) to brighten dark areas
     vec3 col = baseColor * (diff * lightCol1 + vec3(0.25)) + spec * specIntensity * vec3(1.0) + emissive;
     
-    // Volumetric fog (using starless fogColor to prevent distant objects from being translucent)
+    // ── OPTIMIZATION & BANDING FIX: Shifting Fog Start ──────────────────────
+    // Using linear fog that starts 2.5 units away ensures the foreground floor grid
+    // remains completely crisp and free of color banding.
+    float fogT = max(0.0, t - 2.5);
     vec3 fogColor = getFogColor(rd);
-    col = mix(col, fogColor, 1.0 - exp(-0.06 * t * t));
+    col = mix(col, fogColor, 1.0 - exp(-0.16 * fogT));
     
     return col;
 }
@@ -462,6 +465,11 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     float vignette = distUV.x * distUV.y * (1.0 - distUV.x) * (1.0 - distUV.y);
     vignette = clamp(pow(16.0 * vignette, 0.16), 0.0, 1.0);
     color *= vignette;
+    
+    // ── BANDING FIX: Color Dithering ────────────────────────────────────────
+    // Add sub-pixel noise to dither dark color gradients, making them look completely smooth.
+    float dither = hash(fragCoord);
+    color += vec3(dither - 0.5) / 255.0;
     
     // Output final color
     fragColor = vec4(color, 1.0);
