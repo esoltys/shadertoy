@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+# shadertoy — local ShaderToy development runner
+#
+# Usage:
+#   ./shadertoy <number>    open project in browser  (e.g. ./shadertoy 01)
+#
+# Numbers are auto-padded: `./shadertoy 1` → project-01
+
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PORT=8080
+
+die() { echo -e "\n  \033[31mError:\033[0m $*\n" >&2; exit 1; }
+log() { echo -e "  $*"; }
+
+usage() {
+cat <<EOF
+
+  Usage:
+    ./shadertoy <number>    open project in browser
+
+  Examples:
+    ./shadertoy 01
+    ./shadertoy 1           (same — auto-pads to 01)
+
+EOF
+exit 1
+}
+
+[[ $# -lt 1 ]] && usage
+
+if ! [[ "$1" =~ ^[0-9]+$ ]]; then
+    die "Expected a project number, got: $1"
+fi
+
+NUM=$(printf "%02d" "$((10#$1))")
+PROJECT="project-$NUM"
+SHADER="$ROOT/src/$PROJECT/shader.glsl"
+
+[[ -f "$SHADER" ]] || die "Shader not found: src/$PROJECT/shader.glsl"
+
+echo ""
+log "\033[1mShaderToy Runner — $PROJECT\033[0m"
+log ""
+log "  Shader : src/$PROJECT/shader.glsl"
+log "  URL    : http://localhost:$PORT/runner/?shader=$PROJECT"
+log ""
+log "  \033[2mPress Ctrl+C to stop.\033[0m"
+log ""
+
+node "$ROOT/server.js" "$PORT" &
+SERVER_PID=$!
+
+sleep 0.4
+
+URL="http://localhost:$PORT/runner/?shader=$PROJECT"
+if command -v xdg-open &>/dev/null; then
+    xdg-open "$URL" &>/dev/null &
+elif command -v open &>/dev/null; then
+    open "$URL"
+else
+    log "Open in your browser: $URL"
+fi
+
+trap "kill $SERVER_PID 2>/dev/null; echo ''; log 'Server stopped.'" EXIT
+wait "$SERVER_PID"
