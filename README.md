@@ -1,6 +1,6 @@
 # shadertoy
 
-Local development environment for [ShaderToy](https://www.shadertoy.com)-compatible GLSL shaders.
+Local development environment for [ShaderToy](https://www.shadertoy.com) **Image** shaders.
 
 <img src="assets/screenshot-01.png" alt="ShaderToy Runner Screenshot" width="600"/>
 

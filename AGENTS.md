@@ -11,6 +11,8 @@ Rules and conventions for AI agents working in this repository.
 
 ## Adding a new shader project
 
+This runner specifically targets ShaderToy **Image** shaders. It does not support Sound, VR, or multipass buffers (Buffer A-D) at this time.
+
 1. Create `src/project-NN/shader.glsl` (pad to two digits: `01`, `02`, …)
 2. The entry point must be exactly:
    ```glsl
