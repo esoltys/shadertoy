@@ -6,8 +6,10 @@ Rules and conventions for AI agents working in this repository.
 
 - `src/project-NN/shader.glsl` — one GLSL file per project, numbered sequentially
 - `runner/` — shared browser runner, do not modify unless fixing the runtime itself
+- `assets/` — shared assets (e.g. textures) so they can be re-used by projects
 - `server.js` — zero-dependency HTTP server, do not add npm dependencies to it
 - `shadertoy` — bash CLI script
+
 
 ## Adding a new shader project
 
@@ -20,6 +22,8 @@ This runner specifically targets ShaderToy **Image** shaders. It does not suppor
    ```
 3. Do **not** declare the standard uniforms (`iResolution`, `iTime`, etc.) — they are injected by the runner preamble.
 4. Commit the new shader as a single commit: `feat: add project-NN <short description>`
+5. Place any texture/image assets in the `assets/` directory rather than the project directory so they can be reused.
+
 
 ## Modifying the runner
 
