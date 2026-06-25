@@ -64,6 +64,4 @@ server.on('error', (e) => {
     process.exit(1);
 });
 
-server.listen(PORT, '127.0.0.1', () => {
-    console.log(`  Serving at http://localhost:${PORT}`);
-});
+server.listen(PORT, '127.0.0.1');
