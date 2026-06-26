@@ -125,24 +125,17 @@ Hit sceneSDF(vec3 p) {
                 if (h > 0.45) { // 55% fill probability
                     vec3 mCenter = vec3(cx + 0.5, 0.0, cz * 1.5 + 0.75);
                     
-                    // Introduce small random offsets to make layout feel organic
-                    float ox = (fract(h * 12.3) - 0.5) * 0.15;
-                    float oz = (fract(h * 45.6) - 0.5) * 0.15;
-                    mCenter.xz += vec2(ox, oz);
-                    
-                    // Stalk
-                    float rStalk = 0.06 + 0.02 * fract(h * 7.8);
-                    float hStalk = 0.25 + 0.08 * fract(h * 9.1);
-                    
+                    // Fixed size mushrooms (removes fract & offset math per cell)
                     vec3 q = p - mCenter;
-                    float dStalk = length(q.xz) - rStalk;
-                    dStalk = max(dStalk, q.y - hStalk);
+                    
+                    // Stalk (fixed size: r=0.07, h=0.28)
+                    float dStalk = length(q.xz) - 0.07;
+                    dStalk = max(dStalk, q.y - 0.28);
                     dStalk = max(dStalk, -q.y);
                     
-                    // Cap (semi-flattened ellipsoid)
-                    vec3 capP = q - vec3(0.0, hStalk, 0.0);
-                    float rCap = 0.18 + 0.05 * fract(h * 3.4);
-                    float dCap = length(capP * vec3(1.0, 1.35, 1.0)) - rCap;
+                    // Cap (fixed size: r=0.20)
+                    vec3 capP = q - vec3(0.0, 0.28, 0.0);
+                    float dCap = length(vec3(capP.x, capP.y * 1.35, capP.z)) - 0.20;
                     dCap = max(dCap, -capP.y);
                     
                     // Blend cap & stalk smoothly
@@ -209,7 +202,7 @@ Hit sceneSDF(vec3 p) {
 
 // ── Raymarching Engines ──────────────────────────────────────────────────────
 
-// Main camera raymarcher (highly optimized to 48 steps)
+// Main camera raymarcher (highly optimized 48 steps with analytical floor intersection)
 Hit raymarch(vec3 ro, vec3 rd) {
     Hit res;
     res.dist = -1.0;
@@ -217,17 +210,47 @@ Hit raymarch(vec3 ro, vec3 rd) {
     res.id = 0;
     res.localP = vec3(0.0);
     
+    // Analytical floor intersection (since rd.y is guaranteed to be < 0)
+    float tFloor = -ro.y / rd.y;
+    float maxT = min(15.0, tFloor);
+    
     float t = 0.05;
     for (int i = 0; i < 48; i++) {
         vec3 p = ro + rd * t;
         Hit h = sceneSDF(p);
+        
+        // Fast convergence for the floor plane
+        if (tFloor - t < 0.005) {
+            res.dist = tFloor;
+            res.type = 1;
+            res.localP = ro + rd * tFloor;
+            res.id = 0;
+            return res;
+        }
+        
         if (h.dist < 0.001) {
+            if (h.type == 1) {
+                res.dist = tFloor;
+                res.type = 1;
+                res.localP = ro + rd * tFloor;
+                res.id = 0;
+                return res;
+            }
             res = h;
             res.dist = t;
             return res;
         }
         t += h.dist;
-        if (t > 15.0) break;
+        if (t > maxT) {
+            if (maxT == tFloor) {
+                res.dist = tFloor;
+                res.type = 1;
+                res.localP = ro + rd * tFloor;
+                res.id = 0;
+                return res;
+            }
+            break;
+        }
     }
     return res;
 }
