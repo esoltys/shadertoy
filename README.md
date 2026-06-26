@@ -2,7 +2,8 @@
 
 Local development environment for [ShaderToy](https://www.shadertoy.com) **Image** shaders.
 
-<a href="https://www.shadertoy.com/view/s3jXD1"><img src="assets/screenshot-02.png" alt="ShaderToy Runner Screenshot" width="600"/></a>
+[![ShaderToy Runner Screenshot](assets/screenshot-02.png)](https://www.shadertoy.com/view/s3jXD1)
+
 
 Featured Project: [Undulating Centipede](https://www.shadertoy.com/view/s3jXD1) on ShaderToy.
 
