@@ -10,6 +10,7 @@ struct DropState {
     float age;      // time since current phase started
     vec2 hitPos;    // where it hit the surface (local XZ coordinates)
     float radius;   // current radius of droplet
+    float scale;    // drop scale factor (size, ripple amplitude, and penetration multiplier)
 };
 
 // ── Rotation Helpers ─────────────────────────────────────────────────────────
@@ -62,6 +63,9 @@ DropState getDrop(int id, float time) {
     );
     d.hitPos = (randVec * 2.0 - 1.0) * 0.6;
     
+    // Deterministic random scale factor for drop size, ripple size, and depth
+    d.scale = mix(0.45, 1.55, fract(sin(seed * 45.19) * 43758.5453));
+    
     float fallDuration = 1.0;        // 1 second falling
     float penetrationDuration = 2.0; // 2 seconds penetrating/dissolving
     
@@ -72,18 +76,19 @@ DropState getDrop(int id, float time) {
         float h = 1.0 - tCycle / fallDuration; // normalized height factor [0, 1]
         // Falls vertically down to y = 1.0
         d.pos = vec3(d.hitPos.x, 1.0 + h * 1.8, d.hitPos.y);
-        d.radius = 0.032 * (1.0 - h * 0.15); // tear-shaped sizing
+        d.radius = 0.032 * d.scale * (1.0 - h * 0.15); // tear-shaped sizing
     } else if (tCycle < fallDuration + penetrationDuration) {
         // Submerged / Penetration Phase
         d.phase = 1.0;
         d.age = tCycle - fallDuration; // time since impact
         
-        // Decelerating penetration depth: depth goes from 0.0 to 0.75
-        float depth = 0.75 * (1.0 - exp(-2.5 * d.age));
+        // Decelerating penetration depth: depth scale goes up with drop scale
+        float maxDepth = 0.45 + 0.45 * d.scale; // larger drops sink deeper
+        float depth = maxDepth * (1.0 - exp(-2.5 * d.age));
         d.pos = vec3(d.hitPos.x, 1.0 - depth, d.hitPos.y);
         
         // Droplet gradually dissolves (shrinks) as it joins the water volume
-        d.radius = 0.032 * exp(-2.0 * d.age);
+        d.radius = 0.032 * d.scale * exp(-2.0 * d.age);
     } else {
         // Reset / Idle Phase before next cycle
         d.phase = 2.0;
@@ -111,8 +116,8 @@ float getRippleHeight(vec2 xz, float time) {
             if (dist < waveFront) {
                 float distToFront = waveFront - dist;
                 
-                // Exponential decay over time and distance
-                float amp = 0.022 * exp(-1.2 * age) * exp(-1.5 * dist);
+                // Exponential decay over time and distance, scaled by drop intensity
+                float amp = 0.022 * d.scale * exp(-1.2 * age) * exp(-1.5 * dist);
                 
                 // Sine wave shape oscillating behind the expanding wavefront
                 float wave = sin(40.0 * distToFront - 18.0 * age) * exp(-4.5 * distToFront);
@@ -190,8 +195,8 @@ float sdTrails(vec3 p, float time) {
             float t = (p.y - ds.pos.y) / (1.0 - ds.pos.y + 1e-6);
             t = clamp(t, 0.0, 1.0);
             
-            // Trail radius, wider near the surface impact, tapers towards the droplet
-            float radius = mix(0.015, 0.038, t) * exp(-0.6 * ds.age);
+            // Trail radius, wider near the surface impact, tapers towards the droplet, scaled by drop size
+            float radius = mix(0.015, 0.038, t) * exp(-0.6 * ds.age) * (0.6 + 0.4 * ds.scale);
             
             // 3D high-frequency procedural noise simulating a stream of bubbles
             float bubbleNoise = sin(p.y * 90.0 - ds.age * 28.0 + float(i) * 17.3) *
