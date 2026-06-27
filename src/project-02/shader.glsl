@@ -97,57 +97,41 @@ Hit sceneSDF(vec3 p) {
         res.localP = p;
     }
     
-    // 2. Grid-mapped Mushrooms (optimized to 2x2 neighborhood search)
+    // 2. Grid-mapped Mushrooms (simplified to single cell evaluation)
     float mDist = 1e5;
     int mType = 0;
     vec3 mLocal = vec3(0.0);
     int mId = 0;
     
     // Divide floor space into cells: X spacing = 1.0, Z spacing = 1.5
-    float cellX = floor(p.x);
-    float cellZ = floor(p.z / 1.5);
+    float cx = floor(p.x);
+    float cz = floor(p.z / 1.5);
     
-    // Column culling: only check for mushrooms if cellX is near columns [-2, 1]
-    if (cellX >= -3.0 && cellX <= 2.0) {
-        // Determine which neighbor cells are closest to check exactly 4 cells
-        float dx = (fract(p.x) < 0.5) ? -1.0 : 1.0;
-        float dz = (fract(p.z / 1.5) < 0.5) ? -1.0 : 1.0;
-        
-        for (int i = 0; i <= 1; i++) {
-            for (int j = 0; j <= 1; j++) {
-                float cx = cellX + (i == 0 ? 0.0 : dx);
-                float cz = cellZ + (j == 0 ? 0.0 : dz);
-                
-                // Limit mushrooms to grid columns -1.5, -0.5, 0.5, 1.5
-                if (cx < -2.0 || cx > 1.0) continue;
-                
-                float h = hash(vec2(cx, cz));
-                if (h > 0.45) { // 55% fill probability
-                    vec3 mCenter = vec3(cx + 0.5, 0.0, cz * 1.5 + 0.75);
-                    
-                    // Fixed size mushrooms (removes fract & offset math per cell)
-                    vec3 q = p - mCenter;
-                    
-                    // Stalk (fixed size: r=0.07, h=0.28)
-                    float dStalk = length(q.xz) - 0.07;
-                    dStalk = max(dStalk, q.y - 0.28);
-                    dStalk = max(dStalk, -q.y);
-                    
-                    // Cap (fixed size: r=0.20)
-                    vec3 capP = q - vec3(0.0, 0.28, 0.0);
-                    float dCap = length(vec3(capP.x, capP.y * 1.35, capP.z)) - 0.20;
-                    dCap = max(dCap, -capP.y);
-                    
-                    // Blend cap & stalk smoothly
-                    float dMush = smin(dStalk, dCap, 0.07);
-                    
-                    if (dMush < mDist) {
-                        mDist = dMush;
-                        mLocal = q;
-                        mId = int(cx + cz * 100.0);
-                        mType = (dCap < dStalk) ? 3 : 2; // 3 = cap, 2 = stalk
-                    }
-                }
+    // Limit mushrooms to grid columns -1.5, -0.5, 0.5, 1.5 (columns -2, -1, 0, 1)
+    if (cx >= -2.0 && cx <= 1.0) {
+        float h = hash(vec2(cx, cz));
+        if (h > 0.45) { // 55% fill probability
+            vec3 mCenter = vec3(cx + 0.5, 0.0, cz * 1.5 + 0.75);
+            vec3 q = p - mCenter;
+            
+            // Stalk (fixed size: r=0.07, h=0.28)
+            float dStalk = length(q.xz) - 0.07;
+            dStalk = max(dStalk, q.y - 0.28);
+            dStalk = max(dStalk, -q.y);
+            
+            // Cap (fixed size: r=0.20)
+            vec3 capP = q - vec3(0.0, 0.28, 0.0);
+            float dCap = length(vec3(capP.x, capP.y * 1.35, capP.z)) - 0.20;
+            dCap = max(dCap, -capP.y);
+            
+            // Blend cap & stalk smoothly
+            float dMush = smin(dStalk, dCap, 0.07);
+            
+            if (dMush < mDist) {
+                mDist = dMush;
+                mLocal = q;
+                mId = int(cx + cz * 100.0);
+                mType = (dCap < dStalk) ? 3 : 2; // 3 = cap, 2 = stalk
             }
         }
     }
