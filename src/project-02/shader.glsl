@@ -12,7 +12,7 @@ struct Hit {
 };
 
 // ── Global Cache (to avoid thousands of path calls inside raymarch loops) ───
-vec3 segPositions[13];
+vec3 centipedeLength[13];
 vec3 eyeLPos;
 vec3 eyeRPos;
 
@@ -143,14 +143,14 @@ Hit sceneSDF(vec3 p) {
         res.id = mId;
     }
     
-    // 3. Centipede Segments (Head + 12 Body segments) using precomputed cache
+    // 3. Centipede Segments (Head + Body segments) using precomputed cache
     float cDist = 1e5;
     int cType = 4;
     int cSeg = -1;
     vec3 cLocal = vec3(0.0);
     
-    for (int i = 0; i < 13; i++) {
-        vec3 segPos = segPositions[i];
+    for (int i = 0; i < centipedeLength.length(); i++) {
+        vec3 segPos = centipedeLength[i];
         float r = (i == 0) ? 0.21 : 0.15; // Head is slightly larger
         float d = length(p - segPos) - r;
         
@@ -356,7 +356,7 @@ vec3 shade(Hit hit, vec3 ro, vec3 rd, float t) {
     }
     else if (hit.type == 4) {
         // Centipede body segments (green-to-yellow gradient)
-        float tSeg = float(hit.id) / 13.0;
+        float tSeg = float(hit.id) / float(centipedeLength.length());
         vec3 green = vec3(0.0, 1.0, 0.1);
         vec3 yellow = vec3(0.9, 1.0, 0.0);
         baseColor = mix(green, yellow, tSeg);
@@ -401,11 +401,11 @@ vec3 shade(Hit hit, vec3 ro, vec3 rd, float t) {
 void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     // 1. Precompute centipede segment & eye positions once per pixel/frame.
     // This dramatically reduces math instruction count and restores performance.
-    for (int i = 0; i < 13; i++) {
-        segPositions[i] = getPath(iTime * 3.0 - float(i) * 0.25);
+    for (int i = 0; i < centipedeLength.length(); i++) {
+        centipedeLength[i] = getPath(iTime * 3.0 - float(i) * 0.25);
     }
     
-    vec3 headPos = segPositions[0];
+    vec3 headPos = centipedeLength[0];
     vec3 diffVal = getPath(iTime * 3.0 + 0.02) - getPath(iTime * 3.0 - 0.02);
     vec3 tangent = length(diffVal) > 0.001 ? normalize(diffVal) : vec3(0.0, 0.0, 1.0);
     vec3 right = normalize(cross(tangent, vec3(0.0, 1.0, 0.0)));
