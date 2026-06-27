@@ -262,26 +262,26 @@ vec3 getBoxNormal(vec3 p) {
 
 // ── Serene Sky/Background Gradient ───────────────────────────────────────────
 vec3 getSereneBackground(vec3 rd) {
-    // Rich gradient: deep blue-black at bottom -> emerald/teal -> light turquoise at top
-    vec3 bottomCol = vec3(0.015, 0.025, 0.04);
-    vec3 midCol = vec3(0.03, 0.14, 0.12);
-    vec3 topCol = vec3(0.07, 0.22, 0.20);
+    // Soft bright sky gradient: warm horizon to bright sunny blue
+    vec3 horizonCol = vec3(0.85, 0.94, 0.90); // warm pale mint/sand
+    vec3 midCol     = vec3(0.48, 0.82, 0.88); // soft sky cyan
+    vec3 topCol     = vec3(0.20, 0.58, 0.80); // serene blue
     
     float factor = rd.y * 0.5 + 0.5;
-    vec3 bg = mix(bottomCol, midCol, smoothstep(0.0, 0.55, factor));
-    bg = mix(bg, topCol, smoothstep(0.55, 1.0, factor));
+    vec3 bg = mix(horizonCol, midCol, smoothstep(0.0, 0.52, factor));
+    bg = mix(bg, topCol, smoothstep(0.52, 1.0, factor));
     
-    // Serene sun glow from upper right
+    // Sunny glow from upper right
     vec3 lightPos = normalize(vec3(1.2, 1.4, 0.8));
     float dotLight = dot(rd, lightPos);
     
-    float glow = pow(max(dotLight * 0.5 + 0.5, 0.0), 6.0);
-    bg += vec3(0.12, 0.32, 0.26) * glow;
+    float glow = pow(max(dotLight * 0.5 + 0.5, 0.0), 8.0);
+    bg += vec3(1.0, 0.96, 0.82) * glow * 0.45;
     
     // God rays
-    float ray = pow(max(dotLight, 0.0), 24.0) * 0.2;
-    ray += pow(max(dotLight, 0.0), 96.0) * 0.35;
-    bg += vec3(0.48, 0.72, 0.62) * ray;
+    float ray = pow(max(dotLight, 0.0), 20.0) * 0.25;
+    ray += pow(max(dotLight, 0.0), 80.0) * 0.45;
+    bg += vec3(1.0, 0.98, 0.88) * ray * 0.6;
     
     return bg;
 }
@@ -325,9 +325,9 @@ vec3 shadeFallingDroplet(vec3 pLocal, vec3 nLocal, vec3 rdLocal, mat3 mRot) {
     float diff = max(dot(nLocal, lightDirLocal), 0.0);
     float spec = pow(max(dot(reflect(lightDirLocal, nLocal), rdLocal), 0.0), 32.0);
     
-    vec3 baseWaterColor = vec3(0.45, 0.78, 0.68);
-    vec3 col = mix(baseWaterColor * (diff * 0.4 + 0.25), reflectColor, fresnel);
-    col += vec3(1.0) * spec * 0.75;
+    vec3 baseWaterColor = vec3(0.55, 0.88, 0.78);
+    vec3 col = mix(baseWaterColor * (diff * 0.55 + 0.35), reflectColor, fresnel);
+    col += vec3(1.0, 0.98, 0.92) * spec * 1.1; // bright sunny highlight
     
     return col;
 }
@@ -422,8 +422,11 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
             vec3 waterColor = vec3(0.0);
             
             // Beer-Lambert absorption: translucent greens and blues
-            // Red absorbed heavily, green very little, blue moderately
-            vec3 absorptionCoeff = vec3(0.65, 0.12, 0.22) * 1.4;
+            // Red absorbed moderately, green very little, blue slightly
+            vec3 absorptionCoeff = vec3(0.35, 0.04, 0.12) * 0.8;
+            
+            // Volumetric ambient scatter color (makes the water body glow teal/cyan from inside)
+            vec3 scatterColor = vec3(0.08, 0.26, 0.22);
             
             if (tHitInternal > 0.0) {
                 // Ray hit an internal bubble/droplet or cavitation wake
@@ -449,19 +452,22 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
                 
                 vec3 itemColor = vec3(0.0);
                 if (dDrop < dTrail + 0.002) {
-                    // Submerged droplet: glowing silver/cyan air bubble
-                    itemColor = vec3(0.7, 0.95, 0.9) * (diff * 0.4 + 0.2) + vec3(1.0) * spec * 0.85;
-                    itemColor += vec3(0.0, 0.85, 0.65) * rim * 1.6;
+                    // Submerged droplet: glowing silver/cyan air bubble catching sunlight
+                    itemColor = vec3(0.85, 0.98, 0.95) * (diff * 0.5 + 0.35) + vec3(1.0, 0.98, 0.92) * spec * 1.15;
+                    itemColor += vec3(0.1, 0.9, 0.75) * rim * 1.8;
                 } else {
-                    // Cavitation trail: turbulent white/cyan micro-bubbles
+                    // Cavitation trail: turbulent bright white/gold/cyan micro-bubbles
                     float foamNoise = fract(sin(dot(pInternal.xyz, vec3(12.9898,78.233,45.164))) * 43758.5453);
-                    vec3 foamCol = mix(vec3(0.85, 1.0, 0.95), vec3(0.25, 0.9, 0.8), foamNoise);
-                    itemColor = foamCol * (diff * 0.45 + 0.3) + vec3(1.0) * spec * 0.5;
-                    itemColor += vec3(0.0, 0.8, 0.7) * rim * 1.3;
+                    vec3 foamCol = mix(vec3(0.95, 1.0, 0.98), vec3(0.4, 0.95, 0.85), foamNoise);
+                    itemColor = foamCol * (diff * 0.55 + 0.45) + vec3(1.0, 0.98, 0.92) * spec * 0.8;
+                    itemColor += vec3(0.1, 0.85, 0.72) * rim * 1.5;
                 }
                 
                 // Attenuate internal bubble color by absorption from entry to hit point
                 waterColor = itemColor * exp(-absorptionCoeff * tHitInternal);
+                
+                // Add volumetric light scattering
+                waterColor += scatterColor * (vec3(1.0) - exp(-absorptionCoeff * tHitInternal)) * 0.5;
             } else {
                 // Ray exits the box back into the air
                 vec3 pExit = pLocal + refrLocal * tExit;
@@ -479,15 +485,18 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
                 
                 // Attenuate background light through the entire cube width
                 waterColor = exitColor * exp(-absorptionCoeff * tExit);
+                
+                // Add volumetric light scattering
+                waterColor += scatterColor * (vec3(1.0) - exp(-absorptionCoeff * tExit)) * 0.5;
             }
             
             // Mix refraction with external surface reflection
             color = mix(waterColor, reflectColor, fresnel);
             
-            // Glistening direct sun highlights on the cube surface
+            // Glistening warm sun highlights on the cube surface
             vec3 lightDirLocal = worldToLocal(normalize(vec3(1.2, 1.4, 0.8)), mRot);
             float surfaceSpec = pow(max(dot(reflect(lightDirLocal, nLocal), rdLocal), 0.0), 64.0);
-            color += vec3(1.0) * surfaceSpec * fresnel * 1.5;
+            color += vec3(1.0, 0.98, 0.92) * surfaceSpec * fresnel * 2.0;
         }
     }
     
