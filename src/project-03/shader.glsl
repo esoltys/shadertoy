@@ -1,4 +1,4 @@
-// ── GLSL ES 3.00 Shader: Project 03 - Serene Rotating Water Cube ──────────────
+// ── GLSL ES 3.00 Shader: Project 03 - Summer Shower ──────────────────────────
 // A serene, slow-motion simulation of a rotating cube of calm water.
 // Features water drops hitting the surface, producing expanding ripples, and
 // penetrating the translucent water volume with a bullet-time cavitation wake of bubbles.
