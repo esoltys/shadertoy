@@ -127,6 +127,20 @@ float getRippleHeight(vec2 xz, float time) {
     return height;
 }
 
+// ── Calculate Normal of the Rippled Surface ──────────────────────────────────
+vec3 getRippleNormal(vec2 xz, float time) {
+    vec2 e = vec2(0.005, 0.0);
+    float h = getRippleHeight(xz, time);
+    float hX = getRippleHeight(xz + e.xy, time);
+    float hZ = getRippleHeight(xz + e.yx, time);
+    
+    float dhdx = (hX - h) / e.x;
+    float dhdz = (hZ - h) / e.x;
+    
+    // Normal to the heightfield surface y = 1.0 + h(x, z)
+    return normalize(vec3(-dhdx, 1.0, -dhdz));
+}
+
 // ── Box Signed Distance Function ─────────────────────────────────────────────
 float sdBox(vec3 p, vec3 b) {
     vec3 q = abs(p) - b;
@@ -472,6 +486,11 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
                 // Ray exits the box back into the air
                 vec3 pExit = pLocal + refrLocal * tExit;
                 vec3 nExit = getBoxNormal(pExit);
+                
+                // If exiting the top face, use the wavy ripple normal instead of flat box normal
+                if (pExit.y > 0.99) {
+                    nExit = getRippleNormal(pExit.xz, iTime);
+                }
                 
                 // Refract exit ray (water 1.333 to air 1.0)
                 vec3 refrExitLocal = refract(refrLocal, -nExit, 1.333 / 1.0);
